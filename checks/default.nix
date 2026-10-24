@@ -5,14 +5,17 @@
   packages,
   self,
   nixpkgs,
+  nixpkgs-darwin,
   treefmt-nix,
   git-hooks,
+  harborRoot,
   meta,
 }: let
   templateRoot = ../templates/default;
   templateFlake = builtins.readFile (templateRoot + "/flake.nix");
   templateSimit = builtins.fromTOML (builtins.readFile (templateRoot + "/simit.toml"));
-  templateTreefmt = builtins.readFile (templateRoot + "/nix/treefmt.nix");
+  templateTreefmt = (treefmt-nix.lib.evalModule pkgs (import (templateRoot + "/nix/treefmt.nix") {harbor = harborRoot;})).config;
+  languageTreefmt = (treefmt-nix.lib.evalModule pkgs {imports = [self.treefmtModules.latex];}).config;
   templateHooks = builtins.readFile (templateRoot + "/nix/pre-commit.nix");
   profilePackages = {
     cv = lib.mkTexlive {
@@ -117,8 +120,9 @@ in
   assert pkgs.lib.hasInfix "git-hooks.follows" templateFlake;
   assert pkgs.lib.hasInfix "treefmtEval.config.build.check self" templateFlake;
   assert pkgs.lib.hasInfix "pre-commit-check.shellHook" templateFlake;
-  assert pkgs.lib.hasInfix "latexindent" templateTreefmt;
-  assert pkgs.lib.hasInfix "\"*.tex\"" templateTreefmt;
+  assert templateTreefmt.settings.formatter ? latexindent;
+  assert builtins.elem "*.tex" templateTreefmt.settings.formatter.latexindent.includes;
+  assert builtins.attrNames languageTreefmt.settings.formatter == ["latexindent"];
   assert pkgs.lib.hasInfix "treefmt =" templateHooks;
   assert pkgs.lib.hasInfix "nix-flake-check" templateHooks; {
     inherit profileSmoke pdflatexSmoke lualatexSmoke xelatexSmoke nestedWorkingDirectorySmoke conferenceSmoke;
@@ -129,8 +133,8 @@ in
       inherit pkgs system;
       flakeNix = ../templates/default/flake.nix;
       inputs = {
-        inherit nixpkgs treefmt-nix git-hooks;
-        harbor-tex = self;
+        inherit nixpkgs nixpkgs-darwin treefmt-nix git-hooks;
+        harbor = harborRoot;
       };
       requiredFiles = [
         "flake.nix"
@@ -139,7 +143,7 @@ in
         "nix/treefmt.nix"
         "nix/pre-commit.nix"
       ];
-      requiredInputs = ["harbor-tex" "treefmt-nix" "git-hooks"];
+      requiredInputs = ["harbor" "nixpkgs-darwin" "treefmt-nix" "git-hooks"];
       commands = ["pdflatex"];
       inherit (meta) devShellTests;
     };

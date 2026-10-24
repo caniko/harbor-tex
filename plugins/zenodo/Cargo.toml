@@ -3,6 +3,18 @@ name = "anx-plugin-zenodo"
 version = "0.1.0"
 description = "Zenodo archival plugin for the anx article toolchain"
 edition = "2021"
+rust-version = "1.88"
+license = "MIT"
+repository = "https://github.com/caniko/harbor"
+readme = "README.md"
+documentation = "https://docs.rs/anx-plugin-zenodo"
+keywords = ["zenodo", "archive", "doi", "publishing"]
+categories = ["command-line-utilities"]
+include = ["src/**", "tests/**", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["-D", "warnings"]
 
 [[bin]]
 name = "anx-plugin-zenodo"
@@ -20,3 +32,14 @@ dirs = "6"
 base64 = "0.22"
 rand = "0.8"
 webbrowser = "1"
+
+# harbor's root workspace lint policy, explicit so the plugin also builds
+# outside it.
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
