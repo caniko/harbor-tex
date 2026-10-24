@@ -12,3 +12,5 @@
 *.out
 *.run.xml
 *.synctex.gz
+/target/
+/plugins/zenodo/target/
