@@ -27,7 +27,14 @@
     treefmt-nix,
     git-hooks,
     ...
-  }: let
+  } @ outputArgs: let
+    # harbor's superproject root passes itself; a formal argument would make
+    # standalone Nix resolve it as a registry flake.
+    harborRoot =
+      outputArgs.harborRoot or (harbor-meta.lib.standaloneRoot {
+        core = harbor-meta;
+        tex = self;
+      });
     systems = [
       "x86_64-linux"
       "aarch64-linux"
@@ -65,8 +72,8 @@
       anx-plugin-zenodo = pkgs.rustPlatform.buildRustPackage {
         pname = "anx-plugin-zenodo";
         version = "0.1.0";
-        src = ../..;
-        cargoLock.lockFile = ../../Cargo.lock;
+        src = ./plugins/zenodo;
+        cargoLock.lockFile = ./plugins/zenodo/Cargo.lock;
         cargoBuildFlags = ["--package" "anx-plugin-zenodo"];
         cargoTestFlags = ["--package" "anx-plugin-zenodo"];
         nativeBuildInputs = [pkgs.pkg-config];
@@ -143,7 +150,7 @@
       ...
     }:
       import ./checks {
-        inherit pkgs lib system self nixpkgs nixpkgs-darwin treefmt-nix git-hooks;
+        inherit pkgs lib system self nixpkgs nixpkgs-darwin treefmt-nix git-hooks harborRoot;
         packages = self.packages.${system};
         meta = harbor-meta.lib;
       });

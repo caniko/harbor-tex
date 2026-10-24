@@ -8,12 +8,13 @@
   nixpkgs-darwin,
   treefmt-nix,
   git-hooks,
+  harborRoot,
   meta,
 }: let
   templateRoot = ../templates/default;
   templateFlake = builtins.readFile (templateRoot + "/flake.nix");
   templateSimit = builtins.fromTOML (builtins.readFile (templateRoot + "/simit.toml"));
-  templateTreefmt = (treefmt-nix.lib.evalModule pkgs (import (templateRoot + "/nix/treefmt.nix") {harbor = self.inputs.harborRoot;})).config;
+  templateTreefmt = (treefmt-nix.lib.evalModule pkgs (import (templateRoot + "/nix/treefmt.nix") {harbor = harborRoot;})).config;
   languageTreefmt = (treefmt-nix.lib.evalModule pkgs {imports = [self.treefmtModules.latex];}).config;
   templateHooks = builtins.readFile (templateRoot + "/nix/pre-commit.nix");
   profilePackages = {
@@ -133,7 +134,7 @@ in
       flakeNix = ../templates/default/flake.nix;
       inputs = {
         inherit nixpkgs nixpkgs-darwin treefmt-nix git-hooks;
-        harbor = self.inputs.harborRoot;
+        harbor = harborRoot;
       };
       requiredFiles = [
         "flake.nix"
