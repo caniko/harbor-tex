@@ -2,16 +2,18 @@
   description = "LaTeX project — powered by harbor-tex";
 
   inputs = {
-    harbor-tex.url = "github:caniko/harbor-tex";
-    nixpkgs.follows = "harbor-tex/nixpkgs";
-    treefmt-nix.follows = "harbor-tex/treefmt-nix";
-    git-hooks.follows = "harbor-tex/git-hooks";
+    harbor.url = "git+https://github.com/caniko/harbor.git?ref=feat/harbor-monorepo-components&rev=a623c2db712a823f75b29523940fc7432dea49aa";
+    nixpkgs.follows = "harbor/nixpkgs";
+    nixpkgs-darwin.follows = "harbor/nixpkgs-darwin";
+    treefmt-nix.follows = "harbor/treefmt-nix";
+    git-hooks.follows = "harbor/git-hooks";
   };
 
   outputs = {
     self,
     nixpkgs,
-    harbor-tex,
+    nixpkgs-darwin,
+    harbor,
     treefmt-nix,
     git-hooks,
   }: let
@@ -22,9 +24,18 @@
       "aarch64-darwin"
     ];
     forSystem = system: let
-      pkgs = import nixpkgs {inherit system;};
-      treefmtEval = treefmt-nix.lib.evalModule pkgs (import ./nix/treefmt.nix);
-      pre-commit-check = git-hooks.lib.${system}.run {
+      platformNixpkgs =
+        if system == "x86_64-darwin"
+        then nixpkgs-darwin
+        else nixpkgs;
+      pkgs = import platformNixpkgs {inherit system;};
+      treefmtEval = treefmt-nix.lib.evalModule pkgs (import ./nix/treefmt.nix {inherit harbor;});
+      hooks = import "${git-hooks}/nix" {
+        nixpkgs = platformNixpkgs;
+        inherit system;
+        isFlakes = true;
+      };
+      pre-commit-check = hooks.run {
         src = ./.;
         hooks = import ./nix/pre-commit.nix {
           inherit pkgs;
@@ -33,7 +44,7 @@
       };
     in {
       inherit pkgs treefmtEval pre-commit-check;
-      default = harbor-tex.lib.mkLatexDocument {
+      default = harbor.lib.tex.mkLatexDocument {
         inherit pkgs;
         name = "harbor-tex-template";
         src = ./.;
@@ -41,7 +52,7 @@
         engine = "pdflatex";
         profile = "cv";
       };
-      shell = harbor-tex.lib.mkTexDevShell {
+      shell = harbor.lib.tex.mkTexDevShell {
         inherit pkgs;
         profile = "cv";
         extraPackages = pre-commit-check.enabledPackages;
