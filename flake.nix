@@ -39,16 +39,18 @@
       nixpkgs.lib.genAttrs systems (system:
         f {
           inherit system;
-          pkgs = import (
-            if system == "x86_64-darwin"
-            then nixpkgs-darwin
-            else nixpkgs
-          ) {
-            inherit system;
-          };
+          pkgs =
+            import (
+              if system == "x86_64-darwin"
+              then nixpkgs-darwin
+              else nixpkgs
+            ) {
+              inherit system;
+            };
         });
   in {
     inherit lib;
+    treefmtModules.latex = ./nix/treefmt/latex.nix;
 
     templates.default = {
       path = ./templates/default;
@@ -63,9 +65,10 @@
       anx-plugin-zenodo = pkgs.rustPlatform.buildRustPackage {
         pname = "anx-plugin-zenodo";
         version = "0.1.0";
-        src = ./plugins;
-        cargoLock.lockFile = ./plugins/Cargo.lock;
+        src = ../..;
+        cargoLock.lockFile = ../../Cargo.lock;
         cargoBuildFlags = ["--package" "anx-plugin-zenodo"];
+        cargoTestFlags = ["--package" "anx-plugin-zenodo"];
         nativeBuildInputs = [pkgs.pkg-config];
         buildInputs = [pkgs.openssl];
         meta = {
@@ -140,7 +143,7 @@
       ...
     }:
       import ./checks {
-        inherit pkgs lib system self nixpkgs treefmt-nix git-hooks;
+        inherit pkgs lib system self nixpkgs nixpkgs-darwin treefmt-nix git-hooks;
         packages = self.packages.${system};
         meta = harbor-meta.lib;
       });
