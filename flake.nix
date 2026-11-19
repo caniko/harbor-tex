@@ -55,6 +55,9 @@
               inherit system;
             };
         });
+    treefmt =
+      forAllSystems ({pkgs, ...}:
+        treefmt-nix.lib.evalModule pkgs (import ./nix/treefmt.nix {inherit harbor-meta;}));
   in {
     inherit lib;
     treefmtModules.latex = ./nix/treefmt/latex.nix;
@@ -153,8 +156,11 @@
         inherit pkgs lib system self nixpkgs nixpkgs-darwin treefmt-nix git-hooks harborRoot;
         packages = self.packages.${system};
         meta = harbor-meta.lib;
+      }
+      // {
+        formatting = treefmt.${system}.config.build.check self;
       });
 
-    formatter = forAllSystems ({pkgs, ...}: pkgs.alejandra);
+    formatter = builtins.mapAttrs (_: eval: eval.config.build.wrapper) treefmt;
   };
 }

@@ -58,6 +58,21 @@
     profile = "cv";
   };
 
+  latexindentSmoke =
+    pkgs.runCommand "harbor-tex-latexindent-smoke" {
+      nativeBuildInputs = [self.formatter.${system}];
+    } ''
+      mkdir probe
+      cd probe
+      touch flake.nix
+      mkdir nested
+      printf '%s\n' '\begin{itemize}' '\item Probe' '\end{itemize}' > nested/probe.tex
+      treefmt --walk filesystem --no-cache nested/probe.tex
+      grep -Fx $'\t\\item Probe' nested/probe.tex
+      find . -type f | sort | diff -u <(printf '%s\n' ./flake.nix ./nested/probe.tex) -
+      touch "$out"
+    '';
+
   lualatexSmoke = lib.mkLatexDocument {
     inherit pkgs;
     name = "harbor-tex-lualatex-smoke";
@@ -125,7 +140,7 @@ in
   assert builtins.attrNames languageTreefmt.settings.formatter == ["latexindent"];
   assert pkgs.lib.hasInfix "treefmt =" templateHooks;
   assert pkgs.lib.hasInfix "nix-flake-check" templateHooks; {
-    inherit profileSmoke pdflatexSmoke lualatexSmoke xelatexSmoke nestedWorkingDirectorySmoke conferenceSmoke;
+    inherit profileSmoke pdflatexSmoke latexindentSmoke lualatexSmoke xelatexSmoke nestedWorkingDirectorySmoke conferenceSmoke;
     anxPluginZenodoBuild = packages.anx-plugin-zenodo;
     inherit anxPluginPandocImport;
 
